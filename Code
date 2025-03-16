@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LRU Cache Implementation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .output {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>LRU Cache Implementation</h1>
+    <p>Enter cache capacity and perform operations:</p>
+
+    <label for="capacity">Cache Capacity:</label>
+    <input type="number" id="capacity" value="2" min="1">
+    <button onclick="initializeCache()">Initialize Cache</button>
+
+    <hr>
+
+    <label for="key">Key:</label>
+    <input type="number" id="key">
+    <label for="value">Value:</label>
+    <input type="number" id="value">
+    <button onclick="putValue()">Put Key-Value</button>
+
+    <br><br>
+
+    <label for="getKey">Get Value for Key:</label>
+    <input type="number" id="getKey">
+    <button onclick="getValue()">Get Value</button>
+
+    <hr>
+
+    <div class="output" id="output"></div>
+
+    <script>
+        class Node {
+            constructor(key, val) {
+                this.key = key;
+                this.val = val;
+                this.next = null;
+                this.prev = null;
+            }
+        }
+
+        class LRUCache {
+            constructor(capacity) {
+                this.cap = capacity;
+                this.size = 0;
+                this.head = null;
+                this.mp = new Map();
+            }
+
+            insAtBegin(k, v) {
+                if (this.mp.has(k)) {
+                    const temp = this.mp.get(k);
+                    temp.val = v;
+                    this.moveAtFront(k);
+                    return;
+                }
+                this.size++;
+                const cur = new Node(k, v);
+                this.mp.set(k, cur);
+                if (this.head === null) {
+                    cur.next = cur;
+                    cur.prev = cur;
+                    this.head = cur;
+                    return;
+                }
+                cur.next = this.head;
+                cur.prev = this.head.prev;
+                this.head.prev.next = cur;
+                this.head.prev = cur;
+                this.head = cur;
+                if (this.size > this.cap)
+                    this.deleteLast();
+            }
+
+            deleteLast() {
+                if (this.head === null)
+                    return;
+                this.size--;
+                this.mp.delete(this.head.prev.key);
+                if (this.head.next === this.head) {
+                    this.head = null;
+                    return;
+                }
+                const last = this.head.prev;
+                this.head.prev = last.prev;
+                last.prev.next = this.head;
+            }
+
+            moveAtFront(m) {
+                const move = this.mp.get(m);
+                if (move === this.head)
+                    return;
+                const next = move.next;
+                const prev = move.prev;
+                prev.next = next;
+                next.prev = prev;
+                const last = this.head.prev;
+                move.next = this.head;
+                move.prev = last;
+                this.head.prev = move;
+                last.next = move;
+                this.head = move;
+            }
+
+            get(n) {
+                if (!this.mp.has(n))
+                    return -1;
+                this.moveAtFront(n);
+                return this.mp.get(n).val;
+            }
+
+            print() {
+                if (this.head === null)
+                    return "Cache is empty.";
+                let result = "";
+                let temp = this.head;
+                this.head.prev.next = null;
+                while (temp !== null) {
+                    result += `{${temp.key} -> ${temp.val}} `;
+                    temp = temp.next;
+                }
+                this.head.prev.next = this.head;
+                return result;
+            }
+        }
+
+        let cache;
+
+        function initializeCache() {
+            const capacity = parseInt(document.getElementById("capacity").value);
+            cache = new LRUCache(capacity);
+            document.getElementById("output").innerText = `Cache initialized with capacity ${capacity}.`;
+        }
+
+        function putValue() {
+            const key = parseInt(document.getElementById("key").value);
+            const value = parseInt(document.getElementById("value").value);
+            if (isNaN(key) || isNaN(value)) {
+                document.getElementById("output").innerText = "Please enter valid key and value.";
+                return;
+            }
+            cache.insAtBegin(key, value);
+            document.getElementById("output").innerText = `Put: {${key} -> ${value}}\nCurrent Cache: ${cache.print()}`;
+        }
+
+        function getValue() {
+            const key = parseInt(document.getElementById("getKey").value);
+            if (isNaN(key)) {
+                document.getElementById("output").innerText = "Please enter a valid key.";
+                return;
+            }
+            const value = cache.get(key);
+            document.getElementById("output").innerText = `Get: ${key} -> ${value}\nCurrent Cache: ${cache.print()}`;
+        }
+    </script>
+</body>
+</html>
